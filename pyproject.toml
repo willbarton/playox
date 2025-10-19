@@ -1,0 +1,53 @@
+[project]
+name = "playox"
+version = "0.1.0"
+description = "Tic Tac Toe/Noughts and Crosses game API and frontend"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.119.0",
+    "pydantic>=2.12.3",
+    "uvicorn[standard]>=0.38.0",
+]
+
+[dependency-groups]
+test = [
+    "httpx>=0.28.1",
+    "pytest-cov>=7.0.0",
+    "pytest>=8.4.2",
+    "ruff>=0.14.1",
+    "ty>=0.0.1a23",
+]
+
+[tool.uv]
+default-groups = ["test"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--verbose",
+    "--strict-markers",
+    "--cov=playox",
+    "--cov-report=term-missing",
+]
+
+[tool.ruff.lint]
+ignore = ["E731", ]
+select = [
+    # pycodestyle
+    "E", "W",
+    # pyflakes
+    "F",
+    # flake8-bugbear
+    "B",
+    # pyupgrade
+    "UP",
+    # flake8-simplify
+    "SIM",
+    # flake8-comprehensions
+    "C4",
+    # flake8-unused-arguments
+    "ARG",
+    # isort
+    "I",
+]

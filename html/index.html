@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlayOX - Tic Tac Toe</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.10/htmx.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 8px;
+            margin: 1.5rem auto;
+            justify-content: center;
+        }
+
+        .cell {
+            background: #f0f0f0;
+            border: 3px solid #ddd;
+            border-radius: 8px;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cell:hover:not(.occupied) {
+            background: #e0e0ff;
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .cell.occupied {
+            cursor: not-allowed;
+        }
+
+        .cell.x {
+            color: #e74c3c;
+        }
+
+        .cell.o {
+            color: #3498db;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 1rem;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .game-status {
+            text-align: center;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .game-status.winner {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .game-status.draw {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .game-status.playing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .games-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .game-item {
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid #667eea;
+        }
+
+        .game-item:hover {
+            background: #e9ecef;
+            transform: translateX(4px);
+        }
+
+        .game-item.active {
+            background: #e0e7ff;
+            border-left-color: #764ba2;
+        }
+
+        .moves-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .move-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .no-game {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .game-board {
+                grid-template-columns: repeat(3, 80px);
+                grid-template-rows: repeat(3, 80px);
+            }
+
+            .cell {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 PlayOX - Tic Tac Toe</h1>
+
+        <div class="main-grid">
+            <div class="card">
+                <h2>Current Game</h2>
+                <div id="game-area">
+                    <div class="no-game">
+                        <p>No active game. Create a new game to start playing!</p>
+                        <button class="btn" onclick="createGame()">New Game</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Your Games</h2>
+                <div id="games-list" class="games-list">
+                    <div class="no-game">Loading games...</div>
+                </div>
+                <button class="btn" onclick="createGame()">Create New Game</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Move History</h2>
+            <div id="moves-list" class="moves-list">
+                <div class="no-game">Select a game to view moves</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let currentGameId = null;
+
+        async function createGame() {
+            try {
+                const response = await fetch(`${API_URL}/games`, {
+                    method: 'POST'
+                });
+                const gameId = await response.json();
+                currentGameId = gameId;
+                await loadGame(gameId);
+                await loadGames();
+            } catch (error) {
+                alert('Error creating game: ' + error.message);
+            }
+        }
+
+        async function loadGame(gameId) {
+            try {
+                const response = await fetch(`${API_URL}/games/${gameId}`);
+                const game = await response.json();
+                currentGameId = gameId;
+                renderGame(game);
+                await loadMoves(gameId);
+            } catch (error) {
+                alert('Error loading game: ' + error.message);
+            }
+        }
+
+        async function loadGames() {
+            try {
+                const response = await fetch(`${API_URL}/games`);
+                const games = await response.json();
+                renderGamesList(games);
+            } catch (error) {
+                console.error('Error loading games:', error);
+            }
+        }
+
+        async function loadMoves(gameId) {
+            try {
+                const response = await fetch(`${API_URL}/games/${gameId}/moves`);
+                const moves = await response.json();
+                renderMoves(moves);
+            } catch (error) {
+                console.error('Error loading moves:', error);
+            }
+        }
+
+        async function makeMove(x, y) {
+            if (!currentGameId) return;
+
+            try {
+                const response = await fetch(`${API_URL}/games/${currentGameId}/moves`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ x, y })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    alert(error.detail || 'Error making move');
+                    return;
+                }
+
+                const game = await response.json();
+                renderGame(game);
+                await loadMoves(currentGameId);
+                await loadGames();
+            } catch (error) {
+                alert('Error making move: ' + error.message);
+            }
+        }
+
+        function renderGame(game) {
+            let statusHTML = '';
+            let statusClass = 'playing';
+
+            if (game.winner) {
+                statusHTML = `🎉 Player ${game.winner} wins!`;
+                statusClass = 'winner';
+            } else if (game.finished) {
+                statusHTML = `🤝 It's a draw!`;
+                statusClass = 'draw';
+            } else {
+                statusHTML = `Next player: ${game.next_player}`;
+            }
+
+            const boardHTML = game.board.map((row, y) =>
+                row.map((cell, x) => {
+                    const occupied = cell !== '';
+                    const cellClass = `cell ${occupied ? 'occupied' : ''} ${cell.toLowerCase()}`;
+                    const onclick = occupied || game.finished ? '' : `onclick="makeMove(${x}, ${y})"`;
+                    return `<div class="${cellClass}" ${onclick}>${cell}</div>`;
+                }).join('')
+            ).join('');
+
+            document.getElementById('game-area').innerHTML = `
+                <div class="game-status ${statusClass}">${statusHTML}</div>
+                <div class="game-board">${boardHTML}</div>
+                ${game.finished ? '<button class="btn" onclick="createGame()">New Game</button>' : ''}
+            `;
+        }
+
+        function renderGamesList(games) {
+            if (games.length === 0) {
+                document.getElementById('games-list').innerHTML =
+                    '<div class="no-game">No games yet. Create your first game!</div>';
+                return;
+            }
+
+            const gamesHTML = games.map(game => {
+                const status = game.winner ? `Winner: ${game.winner}` :
+                              game.finished ? 'Draw' : 'In Progress';
+                const activeClass = game.id === currentGameId ? 'active' : '';
+                return `
+                    <div class="game-item ${activeClass}" onclick="loadGame('${game.id}')">
+                        <div><strong>Game ${game.id.slice(0, 8)}...</strong></div>
+                        <div>Status: ${status}</div>
+                        <div style="font-size: 0.8rem; color: #6c757d;">
+                            ${new Date(game.created_at).toLocaleString()}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('games-list').innerHTML = gamesHTML;
+        }
+
+        function renderMoves(moves) {
+            if (moves.length === 0) {
+                document.getElementById('moves-list').innerHTML =
+                    '<div class="no-game">No moves yet in this game</div>';
+                return;
+            }
+
+            const movesHTML = moves.map((move, index) => `
+                <div class="move-item">
+                    <strong>Move ${index + 1}:</strong>
+                    Player ${move.player} → (${move.x}, ${move.y})
+                    <span style="color: #6c757d; font-size: 0.8rem;">
+                        ${new Date(move.timestamp).toLocaleTimeString()}
+                    </span>
+                </div>
+            `).join('');
+
+            document.getElementById('moves-list').innerHTML = movesHTML;
+        }
+
+        // Load games on page load
+        loadGames();
+    </script>
+</body>
+</html>
